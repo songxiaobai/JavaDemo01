@@ -1,0 +1,65 @@
+package com.wanczy.socketDemo;
+
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
+
+public class TCPServer implements Runnable{
+	 ServerSocket ss = null;
+	 List<Integer> list = new ArrayList<Integer>();
+	 List<DataInputStream> listDin = new ArrayList<DataInputStream>();
+	 List<DataOutputStream> listDout = new ArrayList<DataOutputStream>();
+	public TCPServer(){
+		try {
+			ss = new ServerSocket(8888);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	public void run(){
+		Socket socket = null;
+		try {
+			// 服务器接收到客户端的数据后，创建与此客户端对话的Socket
+			socket = ss.accept();
+			new Thread(this).start();//启动新的线程
+			int port = socket.getPort();
+			list.add(port);
+			DataInputStream dis = null;
+			DataOutputStream dos = null;
+			dis =  new DataInputStream(socket.getInputStream());
+			listDin.add(dis);
+			dos = new DataOutputStream(socket.getOutputStream());
+			listDout.add(dos);
+			while(true){
+				String content = dis.readUTF();
+				int x = 0;
+				for(int i = 0;i<list.size();i++){
+					if(port == list.get(i)){
+						x = i;
+						break;
+					}
+					
+				}
+				for (int i = 0; i < listDout.size(); i++) {
+					if(i != x){
+						listDout.get(i).writeUTF(content);
+					}
+				}
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally{
+			try {
+				socket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+}
