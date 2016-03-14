@@ -1,0 +1,7 @@
+package com.wanczy.socketDemo;
+
+public class ServerTest {
+	public static void main(String[] args) {
+		new Thread(new TCPServer()).start();//启动服务端
+	}
+}
