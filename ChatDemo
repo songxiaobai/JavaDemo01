@@ -1,0 +1,116 @@
+package com.wanczy.guiDemo;
+
+import java.awt.BorderLayout;
+import java.awt.FlowLayout;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.net.Socket;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JTextArea;
+import javax.swing.JTextField;
+
+public class ChatDemo implements  Runnable{
+	JFrame jf = null;
+	JPanel jp = null;
+	JPanel jp1 = null;
+	JPanel jp2 = null;
+	JTextArea ja = null;
+	JTextField jf1 = null;
+	JButton jb1 = null;
+	Socket socket = null;
+	// 获取输出流，用于客户端向服务器端发送数据
+	DataOutputStream dos = null;
+	// 获取输入流，用于接收服务器端发送来的数据
+	DataInputStream dis = null;
+	boolean flag = true;
+	int i = 1;
+	public ChatDemo(){
+		try {
+			socket = new Socket("localhost", 8888);
+			dos = new DataOutputStream(socket
+					.getOutputStream());
+//			dos.writeUTF("客户端" + i + "来了login");
+			dis = new DataInputStream(socket.getInputStream());
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		} 
+		jf = new JFrame("chat窗口");
+		jf.setBounds(100, 100, 400, 600);
+		jf.setVisible(true);
+//		jf.setResizable(false);
+		jp = new JPanel(new BorderLayout());
+		
+		jp1 = new JPanel();//上部分
+		jp1.setBounds(20, 20, 380, 460);
+		ja = new JTextArea("",30,25);
+		ja.setEditable(false);//设置不可编辑
+		jp1.add(ja);
+		
+		jp2 = new JPanel();//下部分
+		jp2.setLayout(new FlowLayout(FlowLayout.LEFT,10,10));
+		jf1 = new JTextField(20);
+		jb1 = new JButton("发送");
+		jb1.addMouseListener(new MouseAdapter() {//匿名内部类
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				String text = jf1.getText();
+				if(null == text || text.equals("")){
+					new  JOptionPane("请先输入内容").showMessageDialog(jf, "请先输入内容");//弹出框
+				}else{
+					String allText = ja.getText();//将文本域中原始内容取出
+					String s = "客户端："+i+"说:" + text + "\n";//重构说的内容
+					try {
+						dos.writeUTF(s);
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+					ja.setText(allText + s);//再次设置到文本域中
+					jf1.setText("");//清空输入框
+				}
+			}
+		});
+		jp2.add(jf1);
+		jp2.add(jb1);
+		jp.add(jp1,BorderLayout.CENTER);
+		jp.add(jp2,BorderLayout.SOUTH);
+		jf.add(jp,BorderLayout.CENTER);
+		jf.addWindowListener(new WindowAdapter() {//添加Windwos事件
+
+			@Override
+			public void windowClosing(WindowEvent e) {
+				flag = false;
+				try {
+					socket.close();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+			}
+		
+			
+		});
+		
+	}
+	public void run(){
+		while(flag){
+			String s = "";
+			try {
+				s = dis.readUTF();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			if(null != s && !s.equals("")){
+				ja.append(s);
+			}
+		}
+	}
+}
